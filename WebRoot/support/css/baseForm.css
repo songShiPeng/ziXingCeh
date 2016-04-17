@@ -1,0 +1,9 @@
+html td {
+	text-align:center;
+	font-size:medium ;
+	height:50px;
+}
+table{
+		padding:15px;
+		border-spacing:20px;
+}

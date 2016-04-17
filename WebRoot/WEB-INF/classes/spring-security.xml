@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+	http://www.springframework.org/schema/security
+	http://www.springframework.org/schema/security/spring-security-3.0.xsd">
+
+	<!-- 启用annotation注解 -->
+	<security:global-method-security secured-annotations="enabled"
+		jsr250-annotations="enabled" pre-post-annotations="enabled" />
+
+	<!--配置security -->
+	<!-- access-denied-page指定错误之后跳转的页面 -->
+	<security:http auto-config='true'
+		access-denied-page="/errors.jsp">
+		<security:form-login login-page ="/login.jsp" 
+             authentication-failure-url ="/login.jsp?error=true" 
+             default-target-url ="/front/bicycleList.html"   />
+         <!-- 退出设置，默认为logout-url="/j_spring_security_logout" -->
+		<security:logout logout-success-url="/login.jsp"  logout-url="/logout"/> 
+		<!--对登录页面不进行拦截，至于为什么要加一个*是因为请求的时候可能会带有一些参数 -->
+		<security:intercept-url pattern="/login.jsp*" filters="none" />
+		<security:intercept-url pattern="/App_Themes/**" filters="none" />
+		<security:intercept-url pattern="/images/**" filters="none" />
+		<security:intercept-url pattern="/errors/**" filters="none" />
+		<security:intercept-url pattern="/css/**" filters="none" />
+		<security:custom-filter ref="securityFilter"
+			before="FILTER_SECURITY_INTERCEPTOR" />
+		
+		<!--
+			配置进入系统任何界面或方法所需要的权限,此处要求为登陆合法用户
+		-->
+		<security:intercept-url pattern="/front/*" access="ROLE_ADMIN" />
+		<security:intercept-url pattern="/useSys/*" access="ROLE_USER" />
+		
+		<!-- 配置登陆过滤器,去掉后remember me可以使用 -->
+		<security:custom-filter ref="loginFilter"
+			before="FORM_LOGIN_FILTER" />
+	</security:http>
+
+	<!-- 登陆过滤器  本来没有-->
+	<bean id="loginFilter"
+		class="com.security.LhUsernamePasswordAuthenticationFilter">
+		<!-- 处理登录 -->
+		<property name="filterProcessesUrl" value="/ziXingChe"></property>
+		<property name="authenticationSuccessHandler"
+			ref="loginLogAuthenticationSuccessHandler">
+		</property>
+		<property name="authenticationFailureHandler"
+			ref="simpleUrlAuthenticationFailureHandler">
+		</property>
+		<property name="authenticationManager"
+			ref="authenticationManager">
+		</property>
+	</bean>
+	<bean id="loginLogAuthenticationSuccessHandler"
+		class="org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler">
+		<!-- 登录成功后跳转的ACTION或页面 -->
+		<property name="defaultTargetUrl" value="/front/bicycleList.html"></property>
+	</bean>
+	<bean id="simpleUrlAuthenticationFailureHandler"
+		class="org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler">
+		<!-- 登录失败后跳转的ACTION或页面 -->
+		<property name="defaultFailureUrl" value="/login.jsp"></property>
+	</bean>
+
+	<!-- 授权过滤器 -->
+	<bean id="securityFilter"
+		class="com.security.LhSecurityFilter">
+		<!-- 用户拥有的权限 -->
+		<property name="authenticationManager"
+			ref="authenticationManager" />
+		<!-- 用户是否拥有所请求资源的权限 -->
+		<property name="accessDecisionManager"
+			ref="lhAccessDecisionManager" />
+		<!-- 系统资源与权限对应关系 -->
+		<property name="securityMetadataSource"
+			ref="lhSecurityMetadataSource" />
+	</bean>
+	<!-- 配置认证管理器 -->
+	<bean id="lhAccessDecisionManager"
+		class="com.security.LhAccessDecisionManager">
+	</bean>
+	<bean id="lhSecurityMetadataSource"
+		class="com.security.LhSecurityMetadataSource">
+	</bean>
+	<!--  自己拦截密码需注释--> 
+	<!--自己的服务，用户名和密码，以及角色-->
+	<bean id="lhUserDetailsService"
+		class="com.security.LhUserDetailsService">
+	</bean>
+	
+	<!--  认证管理器，实现用户认证的入口，主要实现UserDetailsService接口即可  --> 
+      <security:authentication-manager  alias ="authenticationManager" > 
+          <security:authentication-provider
+              user-service-ref ="lhUserDetailsService" > 
+              
+                
+          </security:authentication-provider > 
+      </security:authentication-manager > 
+	
+
+
+	<!-- 国际化信息 -->
+	<bean id="messageSource"
+	
+		class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+		<!-- 配置登陆页面出错之后从哪里读取数据显示在页面上 -->
+		<property name="basename"
+			value="classpath:org/springframework/security/messages_zh_CN" />
+	</bean>
+</beans>
